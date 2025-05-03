@@ -128,42 +128,24 @@ def predict():
     ciphertext = request.form.get("ciphertext")
     iv = request.form.get("iv")
 
-    # print("email: ", email + ' ' +  len(ciphertext) + ' ' + len(iv))
-
-    print("11111111111")
-
     if not ciphertext or not iv:
         return jsonify({"error": "Missing encrypted data"}), 400
-    
-    print("9999999999999999")
 
     try:
-        print("000000")
         decrypted_data = decrypt_image(ciphertext, iv)
-        print("1")
-
         img = Image.open(io.BytesIO(decrypted_data))
-        print(img)
-        print("2")
-
         original_format = img.format
-        print("Original Format: ", original_format)
         extension = original_format.lower()
 
         path = os.path.join(UPLOAD_FOLDER, f"{email}_uploaded.{extension}")
         img.save(path)
-        print("3")
     except Exception as e:
         return jsonify({"error": "Decryption failed", "details": str(e)}), 400
 
     if not check_image_integrity(path) or not check_metadata(path) or not check_file_type(path):
         return jsonify({"error": "Security checks failed."}), 400
-    
-    print("22222222222222")
 
     result_path, tumor_info, tumor_count = detect_tumors(path)
-
-    print("3333333333333")
     
     with open(result_path, "rb") as img_file:
         encoded_img = base64.b64encode(img_file.read()).decode("utf-8")
@@ -224,8 +206,8 @@ def send_otp():
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
 
-        from_mail = 'irtaza.manzoor1203@gmail.com'
-        server.login(from_mail, 'dvoh zngx mzgh dnbj')
+        from_mail = os.getenv("FROM_EMAIL")
+        server.login(from_mail, os.getenv("PASSWORD"))
         to_mail = email
 
         msg = EmailMessage()
