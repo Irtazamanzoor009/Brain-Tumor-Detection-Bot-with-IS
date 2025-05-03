@@ -1,0 +1,119 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  .form input::placeholder {
+    font-family: 'Segoe UI', sans-serif; 
+    font-size: 16px; 
+    color: #888;
+  }
+
+.signup-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(to right, #e3f2fd, #fce4ec);
+    /* background-color: red; */
+  }
+  
+  .signup {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    /* background-color: red; */
+  }
+  
+  .signupForm h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #3f51b5;
+    font-size: 25px;
+  }
+  
+  .form input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    /* background-color: red; */
+  }
+  
+  .form button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 1rem;
+    background-color: #3f51b5;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .form button:disabled {
+    background-color: #9fa8da;
+    cursor: not-allowed;
+  }
+  
+  .form button:hover:not(:disabled) {
+    background-color: #303f9f;
+  }
+  
+  .otp-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+    /* background-color: red; */
+    text-align: center;
+    /* margin: 10px auto; */
+  }
+
+  /* .otp-row button
+  {
+    background-color: blue;
+    align-items: center;
+    margin: 10px auto;
+  } */
+  
+  .otp-input {
+    flex: 0 0 70%;
+    padding: 10px;
+    /* margin: 10px auto; */
+  }
+  
+  .send-otp-btn {
+    flex: 0 0 30%;
+    padding: 10px;
+    background-color: #009688;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 15px auto;
+  }
+  
+  
+  .send-otp-btn:hover {
+    background-color: #00796b;
+  }
+  
+  .red.msgs {
+    color: red;
+    font-size: 0.9rem;
+  }
+  
+  .green.msgs {
+    color: green;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  
