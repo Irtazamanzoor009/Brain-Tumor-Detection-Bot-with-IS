@@ -4,6 +4,7 @@ import Signup from "./components/Signup";
 import Login from "./components/Login";
 import Protected from "./components/Protected";
 import { Toaster } from "react-hot-toast";
+import LogsViewer from "./components/LogsViewer";
 
 function App() {
   return (
@@ -21,6 +22,8 @@ function App() {
         <Route path="/signin" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/" element={<Protected />} />
+        <Route path="/logs" element={<LogsViewer />} />
+
       </Routes>
     </Router>
   );

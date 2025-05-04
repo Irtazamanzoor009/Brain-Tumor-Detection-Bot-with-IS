@@ -1,0 +1,38 @@
+.logs-container {
+    max-width: 850px;
+    width: 100%;
+    padding: 2rem;
+  }
+  
+  .logs-table-wrapper {
+    overflow-x: auto;
+    margin-top: 1rem;
+  }
+  
+  .logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .logs-table th,
+  .logs-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  .logs-table th {
+    background-color: #3f51b5;
+    color: white;
+  }
+  
+  .logs-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .logs-table tr:hover {
+    background-color: #f1f1f1;
+  }
+  

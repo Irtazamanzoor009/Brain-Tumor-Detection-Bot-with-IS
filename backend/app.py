@@ -7,7 +7,8 @@ from flask import request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import users_collection
 import jwt
-import datetime
+# import datetime
+from datetime import datetime, timezone, timedelta
 from config import SECRET_KEY, JWT_EXPIRATION_SECONDS
 import base64
 from auth import check_file_type, check_image_integrity, check_metadata, sanitize_text, encrypt_AES_CBC, decrypt_AES_CBC, decrypt_image
@@ -21,6 +22,8 @@ from flask_limiter.errors import RateLimitExceeded
 from flask import make_response
 from PIL import Image
 import io
+from database import audit_logs
+# from datetime import datetime
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -42,15 +45,47 @@ def verify_jwt_token():
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         return payload, None, None
     except jwt.ExpiredSignatureError:
+        log_security_event("expired_token", details="JWT expired")
         return None, jsonify({"msg": "Token expired"}), 401
     except jwt.InvalidTokenError:
+        log_security_event("invalid_token", details="JWT invalid")
         return None, jsonify({"msg": "Invalid token"}), 401
+
+# @app.errorhandler(RateLimitExceeded)
+# def handle_ratelimit_error(e):
+#     log_security_event("rate_limit_exceeded", details="Too many requests")
+#     return make_response(jsonify({
+#         "error": "Too many requests. Please slow down."
+#     }), 429)
 
 @app.errorhandler(RateLimitExceeded)
 def handle_ratelimit_error(e):
+    email = None
+    try:
+        data = request.get_json(force=True)
+        email = data.get("email")
+    except:
+        pass
+
+    if not email:
+        email = request.form.get("email")
+
+    log_security_event("rate_limit_exceeded", user_email=email, details="Too many requests")
     return make_response(jsonify({
         "error": "Too many requests. Please slow down."
     }), 429)
+
+
+def log_security_event(event_type, user_email=None, details=None):
+    log = {
+        "event_type": event_type,
+        "timestamp": datetime.now(timezone.utc),
+        "ip": request.remote_addr,
+        "user_agent": request.headers.get('User-Agent'),
+        "user_email": user_email,
+        "details": details
+    }
+    audit_logs.insert_one(log)
 
 
 @app.route("/signup", methods=["POST"])
@@ -73,7 +108,8 @@ def signup():
 
     users_collection.insert_one({
         "email": data["email"],
-        "password": hashed_pw
+        "password": hashed_pw,
+        "role": "user"
     })
 
     return jsonify({"msg": "User created", "success": "true"}), 201
@@ -93,14 +129,19 @@ def login():
         return jsonify({"msg": "Decryption failed", "success": "false"}), 400
     
     if not user or not check_password_hash(user["password"], decrypted_password):
+        log_security_event(
+        event_type="failed_login",
+        user_email=data["email"],
+        details="Wrong password or user not found"
+    )
         return jsonify({"msg": "Invalid credentials"}), 401
     
     payload = {
         "email": data["email"],
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=JWT_EXPIRATION_SECONDS)
+        "exp": datetime.now(timezone.utc) + timedelta(seconds=JWT_EXPIRATION_SECONDS)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-    return jsonify({"token": token})
+    return jsonify({"token": token, "role": user.get("role", "user")})
 
 
 @app.route("/protected", methods=["GET"])
@@ -117,7 +158,7 @@ def rate_limit_key2():
     return email
 
 @app.route("/predict", methods=["POST"])
-@limiter.limit("10 per minute", key_func=rate_limit_key2)
+@limiter.limit("2 per minute", key_func=rate_limit_key2)
 def predict():
     payload, error_response, status = verify_jwt_token()
     if error_response:
@@ -143,6 +184,7 @@ def predict():
         return jsonify({"error": "Decryption failed", "details": str(e)}), 400
 
     if not check_image_integrity(path) or not check_metadata(path) or not check_file_type(path):
+        log_security_event("malicious_upload", user_email=email, details="Image failed security checks")
         return jsonify({"error": "Security checks failed."}), 400
 
     result_path, tumor_info, tumor_count = detect_tumors(path)
@@ -233,6 +275,44 @@ def verify_otp():
     if otp_entered == session.get("otp") or otp_entered == "120309":
         return jsonify({"success": True, "msg": "OTP verified"})
     return jsonify({"success": False, "msg": "Invalid OTP"}), 400
+
+@app.route("/logs", methods=["GET"])
+def get_logs():
+    payload, error_response, status = verify_jwt_token()
+    if error_response:
+        return error_response, status
+    
+    user_email = payload.get("email")
+    if not user_email:
+        return jsonify({"success": False, "msg": "Unauthorized access"}), 403
+
+    
+    user = users_collection.find_one({"email": user_email})
+    if not user or user.get("role") != "admin":
+        return jsonify({"success": False, "msg": "Access denied: Admins only"}), 403
+    
+    try:
+        logs = list(audit_logs.find().sort("timestamp", -1))
+        for log in logs:
+            log["_id"] = str(log["_id"])
+            if isinstance(log["timestamp"], datetime):
+                log["timestamp"] = log["timestamp"].isoformat()
+            else:
+                log["timestamp"] = str(log["timestamp"])
+
+        return jsonify({
+            "success": True,
+            "logs": logs
+        }), 200
+    except Exception as e:
+        print(f"Error fetching logs: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch logs",
+            "details": str(e)
+        }), 500
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

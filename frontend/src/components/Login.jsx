@@ -41,7 +41,11 @@ const Login = () => {
         localStorage.setItem("token", json.token);
         localStorage.setItem("email", data.email);
         // setEmail(data.email);
-        navigate("/");
+        if (json.role === "admin") {
+          navigate("/logs");
+        } else {
+          navigate("/");
+        }
       } else {
         setServerError(json.msg || "Login failed");
         setTimeout(() => setServerError(""), 2000);

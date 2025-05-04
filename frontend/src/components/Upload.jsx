@@ -30,10 +30,10 @@ export default function Upload({ onDetectionComplete }) {
                 const email = localStorage.getItem("email");
                 formData.append("email", email);
 
-                console.log("Form Data: ", formData);
-                console.log("Email: ", email)
+                // console.log("Form Data: ", formData);
+                // console.log("Email: ", email)
                 // console.log("Cipher Text: ", ciphertext)
-                console.log("iv: ", iv);
+                // console.log("iv: ", iv);
 
                 const token = localStorage.getItem("token");
 
@@ -42,11 +42,11 @@ export default function Upload({ onDetectionComplete }) {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-
-                if (response.status === 429) {
-                    alert("Too many requests. Try again after few minutes");
-                    return;
-                }
+                // console.log("Response: ", response)
+                // if (response.status === 429) {
+                //     alert("Too many requests. Try again after few minutes");
+                //     return;
+                // }
 
                 const { tumor_info, tumor_count, image: base64Result } = response.data;
 
@@ -61,6 +61,11 @@ export default function Upload({ onDetectionComplete }) {
 
                 if (onDetectionComplete) onDetectionComplete();
             } catch (err) {
+                if(err.status === 429)
+                {
+                    alert("Too many requests. Try again in few minutes")
+                    return;
+                }
                 console.error("Prediction failed:", err);
                 alert("Unauthorized or error occurred!");
             } finally {
